@@ -7,6 +7,7 @@ import uuid
 import shutil
 import pandas as pd
 import time
+import urllib.request
 from flask import Flask, render_template, request, send_file, redirect, url_for, send_from_directory, jsonify
 from PIL import Image, ImageDraw, ImageFont
 from werkzeug.utils import secure_filename
@@ -42,6 +43,18 @@ PORTFOLIO_URL = os.environ.get("PORTFOLIO_URL", "https://")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/gdsckare/Certificate-Generator")
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "bharathinukurthi1@gmail.com")
 GDG_NAME = os.environ.get("GDG_NAME", "GDG On Campus KARE")
+
+# Try loading .env if python-dotenv is available (optional)
+try:
+    from dotenv import load_dotenv  # type: ignore
+    _ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, os.pardir))
+    load_dotenv(os.path.join(_ROOT_DIR, ".env"))
+except Exception:
+    pass
+
+# Keepalive/heartbeat config (optional)
+KEEPALIVE_URL = os.environ.get("KEEPALIVE_URL")
+KEEPALIVE_INTERVAL_SECONDS = int(os.environ.get("KEEPALIVE_INTERVAL_SECONDS", "660"))  # 11 minutes
 
 @app.context_processor
 def inject_globals():
@@ -667,6 +680,25 @@ def _cleanup_jobs_loop():
 # Start background cleanup thread
 _janitor_thread = threading.Thread(target=_cleanup_jobs_loop, daemon=True)
 _janitor_thread.start()
+
+
+def _keepalive_loop():
+    if not KEEPALIVE_URL:
+        return
+    while True:
+        try:
+            req = urllib.request.Request(KEEPALIVE_URL, method="GET")
+            with urllib.request.urlopen(req, timeout=10) as _:
+                pass
+        except Exception:
+            # Best-effort; ignore failures
+            pass
+        time.sleep(KEEPALIVE_INTERVAL_SECONDS)
+
+
+# Start keepalive thread if configured
+_keepalive_thread = threading.Thread(target=_keepalive_loop, daemon=True)
+_keepalive_thread.start()
 
 
 @app.route("/uploads/<path:filename>")
