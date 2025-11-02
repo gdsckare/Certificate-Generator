@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0d1117; color:#e6edf3; margin:0; }
+    .container { max-width: 980px; margin: 40px auto; padding: 0 20px; }
+    .card { background:#161b22; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.25); padding:24px 28px; border: 1px solid #30363d; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .sub { color:#9da7b3; margin: 0 0 24px; }
+    .row { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+    .field { padding:14px 16px; border:1px solid #30363d; border-radius:10px; background:#0d1117; flex:1; color:#e6edf3; }
+    .field input[type="file"] { width:100%; color:#e6edf3; background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:8px; }
+    .field input[type="file"]::file-selector-button { background:#238636; color:#fff; border:1px solid #2ea043; padding:8px 12px; border-radius:8px; margin-right:10px; cursor:pointer; }
+    .field input[type="file"]::-webkit-file-upload-button { background:#238636; color:#fff; border:1px solid #2ea043; padding:8px 12px; border-radius:8px; margin-right:10px; cursor:pointer; }
+    .field input[type="file"]:hover::file-selector-button { background:#2ea043; }
+    .field input[type="file"]:hover::-webkit-file-upload-button { background:#2ea043; }
+    .actions { display:flex; gap:12px; align-items:center; margin-top: 18px; }
+    .btn { background:#1a73e8; border:1px solid #2b6fd3; color:#fff; padding:12px 18px; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn:hover { background:#1664c5; }
+    label { display:flex; align-items:center; gap:8px; color:#c9d1d9; }
+    .notice { background:#332b00; color:#ffec99; border:1px solid #5b4b00; padding:10px 12px; border-radius:10px; margin: 12px 0; }
+    .brandbar { background:#0b1220; border-bottom:1px solid #30363d; padding: 12px 16px; display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; }
+    .brandbar .left { display:flex; align-items:center; gap:12px; }
+    .brandbar .left img { height:64px; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+    .brandbar .center { text-align:center; font-weight:800; letter-spacing:0.5px; }
+    .brandbar .right { display:flex; justify-content:flex-end; }
+    .brandbar .right a { color:#8ab4ff; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+    .brandbar .right a svg { width:18px; height:18px; fill:#8ab4ff; }
+    .about { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px 18px; margin-top:16px; }
+    .about h3 { margin:0 0 8px; }
+    .about a { color:#8ab4ff; text-decoration:none; }
+    .footer { margin-top:24px; padding:20px; color:#9da7b3; text-align:center; border-top:1px solid #30363d; }
+    .footer-line { height:2px; background: linear-gradient(90deg, #1a73e8, #34a853, #fbbc05, #ea4335); opacity:0.5; border-radius:2px; margin:0 auto 10px; width:160px; }
+    .footer-links { margin-top:6px; }
+    .footer a { color:#8ab4ff; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="brandbar">
+    <div class="left"><img alt="GDG" src="/assets/GDG_Logo.svg"></div>
+    <div class="center">With Love by GDG On Campus KARE</div>
+    <div class="right"><a href="{{ GITHUB_URL }}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.64 0 8.13c0 3.6 2.29 6.64 5.47 7.72.4.08.55-.18.55-.39 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.52-.01-.53.63-.01 1.08.59 1.23.83.72 1.22 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.91-3.64-4.06 0-.9.31-1.64.82-2.22-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.85.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.07 2.2-.85 2.2-.85.44 1.1.16 1.92.08 2.12.51.58.82 1.32.82 2.22 0 3.16-1.87 3.86-3.65 4.06.29.26.54.76.54 1.53 0 1.1-.01 1.98-.01 2.25 0 .21.15.47.55.39C13.71 14.77 16 11.73 16 8.13 16 3.64 12.42 0 8 0z"></path></svg><span>Source on GitHub</span></a></div>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h1>Certificates Generator</h1>
+      <p class="sub">Upload your data file and base image to begin.</p>
+      <div class="notice">We do not store your files. Previews are streamed and generated images are deleted after download or after 10 minutes of inactivity.</div>
+      <form action="/" method="post" enctype="multipart/form-data">
+        <div class="row">
+          <div class="field"><strong>Data File</strong><br><input type="file" name="file" accept=".csv,.xlsx" required></div>
+          <div class="field"><strong>Base Image</strong><br><input type="file" name="image" accept="image/*" required></div>
+        </div>
+        <div class="actions">
+          <label><input type="checkbox" name="headers_present" checked> Headers present in first row</label>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn">Next</button>
+        </div>
+      </form>
+    </div>
+    <div class="about">
+      <h3>About {{ GDG_NAME }}</h3>
+      <p>{{ GDG_NAME }} fosters developer communities on campus, running tech talks, workshops, and open source initiatives.</p>
+    </div>
+    <div class="footer">
+      <div class="footer-line"></div>
+      <div>Made by Inukurthi Bharath Kumar</div>
+      <div class="footer-links"><a href="{{ LINKEDIN_URL }}" target="_blank" rel="noopener">LinkedIn</a> · <a href="{{ CONTRIBUTOR_GITHUB }}" target="_blank" rel="noopener">GitHub</a> · <a href="mailto:{{ CONTACT_EMAIL }}" target="_blank" rel="noopener">Mail</a></div>
+    </div>
+  </div>
+</body>
+</html>

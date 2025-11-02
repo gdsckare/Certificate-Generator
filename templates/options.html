@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Options</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0d1117; color:#e6edf3; margin:0; }
+    .container { max-width: 1200px; margin: 28px auto; padding: 0 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .card { background:#161b22; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.25); padding:20px 22px; border: 1px solid #30363d; }
+    .stage { position: relative; display: inline-block; }
+    .marker { position: absolute; transform: translate(-50%, -50%); color: #000; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+    .btn .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.6); border-top-color:#fff; border-radius:50%; animation: spin 0.8s linear infinite; vertical-align: -2px; margin-right:8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    img { max-width: 100%; height: auto; border-radius:10px; }
+    h2 { margin: 0 0 12px; }
+    .small { font-size: 12px; color: #9da7b3; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
+    .btn { background:#1a73e8; border:1px solid #2b6fd3; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn.secondary { background:#0d1117; color:#8ab4ff; border: 1px solid #30363d; }
+    .btn:hover { filter: brightness(0.95); }
+    select, input[type="number"] { padding:8px 10px; border:1px solid #30363d; border-radius:10px; background:#0d1117; color:#e6edf3; }
+    input[type="file"] { width:100%; color:#e6edf3; background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:8px; }
+    input[type="file"]::file-selector-button { background:#238636; color:#fff; border:1px solid #2ea043; padding:8px 12px; border-radius:8px; margin-right:10px; cursor:pointer; }
+    input[type="file"]::-webkit-file-upload-button { background:#238636; color:#fff; border:1px solid #2ea043; padding:8px 12px; border-radius:8px; margin-right:10px; cursor:pointer; }
+    input[type="file"]:hover::file-selector-button { background:#2ea043; }
+    input[type="file"]:hover::-webkit-file-upload-button { background:#2ea043; }
+    /* Fullscreen preview modal */
+    #previewModal { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    #previewModal img { max-width: 95vw; max-height: 95vh; object-fit: contain; box-shadow: 0 0 24px rgba(0,0,0,0.6); border-radius:12px; }
+    #previewClose { position: absolute; top: 12px; right: 16px; color: #fff; font-size: 28px; cursor: pointer; user-select: none; }
+    .notice { background:#332b00; color:#ffec99; border:1px solid #5b4b00; padding:10px 12px; border-radius:10px; margin: 12px 0; }
+    .brandbar { background:#0b1220; border-bottom:1px solid #30363d; padding: 12px 16px; display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; }
+    .brandbar img { height:64px; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+    .brandbar .title { font-weight:800; color:#e6edf3; text-align:center; letter-spacing:0.5px; }
+    .brandbar .right { display:flex; justify-content:flex-end; }
+    .brandbar .right a { color:#8ab4ff; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+    .brandbar .right a svg { width:18px; height:18px; fill:#8ab4ff; }
+    .about { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px 18px; margin-top:16px; }
+    .about h3 { margin:0 0 8px; }
+    .about a { color:#8ab4ff; text-decoration:none; }
+    .footer { margin-top:24px; padding:20px; color:#9da7b3; text-align:center; border-top:1px solid #30363d; }
+    .footer-line { height:2px; background: linear-gradient(90deg, #1a73e8, #34a853, #fbbc05, #ea4335); opacity:0.5; border-radius:2px; margin:0 auto 10px; width:160px; }
+    .footer-links { margin-top:6px; }
+    .footer a { color:#8ab4ff; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const img = document.getElementById('baseImage');
+      const form = document.getElementById('genForm');
+      const activeSelect = document.getElementById('activeColumn');
+      const markersLayer = document.getElementById('markers');
+      const generateBtn = document.getElementById('generateBtn');
+      const previewBtn = document.getElementById('previewBtn');
+      let pollTimer = null;
+      let currentJobId = null;
+      let currentTotal = 0;
+      let currentCompleted = 0;
+      const fontChoice = document.getElementById('fontChoice');
+      const fontUploadRow = document.getElementById('fontUploadRow');
+
+      function updateFontUploadVisibility() {
+        if (!fontChoice) return;
+        fontUploadRow.style.display = fontChoice.value === 'other' ? 'block' : 'none';
+      }
+      if (fontChoice) {
+        fontChoice.addEventListener('change', updateFontUploadVisibility);
+        updateFontUploadVisibility();
+      }
+
+      function setGenerateButtonState(mode, completed = 0, total = 0) {
+        // mode: 'idle' | 'generating' | 'download'
+        generateBtn.dataset.mode = mode;
+        if (mode === 'idle') {
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = 'Generate';
+        } else if (mode === 'generating') {
+          generateBtn.disabled = true; // prevent double start
+          const progressText = total ? `Generating ${completed} / ${total}...` : 'Generating...';
+          generateBtn.innerHTML = `<span class="spinner"></span>${progressText}`;
+        } else if (mode === 'download') {
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = 'Download ZIP';
+        }
+      }
+
+      function updateMarkers() {
+        markersLayer.innerHTML = '';
+        const rect = img.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const scale = img.naturalWidth ? (width / img.naturalWidth) : 1;
+        const cols = JSON.parse(document.getElementById('columnsJson').value);
+        cols.forEach(col => {
+          const xInput = form.querySelector(`[name="pos_${col}_x"]`);
+          const yInput = form.querySelector(`[name="pos_${col}_y"]`);
+          if (!xInput || !yInput) return;
+          const x = parseFloat(xInput.value || '0.5') * width;
+          const y = parseFloat(yInput.value || '0.5') * height;
+          const marker = document.createElement('div');
+          marker.className = 'marker';
+          marker.style.left = x + 'px';
+          marker.style.top = y + 'px';
+          // Set marker font size to match the configured font size scaled to displayed image size
+          const sizeInput = form.querySelector(`[name="size_${col}"]`);
+          const px = parseInt(sizeInput && sizeInput.value ? sizeInput.value : '40', 10);
+          const scaled = Math.max(1, Math.round((isNaN(px) ? 40 : px) * scale));
+          marker.style.fontSize = scaled + 'px';
+          marker.style.color = '#000';
+          marker.textContent = col;
+          markersLayer.appendChild(marker);
+        });
+      }
+
+      function setPositionFromClick(ev) {
+        const rect = img.getBoundingClientRect();
+        const nx = (ev.clientX - rect.left) / rect.width;
+        const ny = (ev.clientY - rect.top) / rect.height;
+        const col = activeSelect.value;
+        if (!col) return;
+        const xInput = form.querySelector(`[name="pos_${col}_x"]`);
+        const yInput = form.querySelector(`[name="pos_${col}_y"]`);
+        if (xInput && yInput) {
+          xInput.value = Math.max(0, Math.min(1, nx.toFixed(4)));
+          yInput.value = Math.max(0, Math.min(1, ny.toFixed(4)));
+          updateMarkers();
+        }
+      }
+
+      img.addEventListener('click', setPositionFromClick);
+      img.addEventListener('load', updateMarkers);
+      form.addEventListener('input', (e) => {
+        if (e.target.name && (e.target.name.startsWith('pos_') || e.target.name.startsWith('size_'))) {
+          updateMarkers();
+        }
+      });
+      window.addEventListener('resize', updateMarkers);
+
+      const modal = document.getElementById('previewModal');
+      const modalImg = document.getElementById('previewImgFS');
+      const modalClose = document.getElementById('previewClose');
+      let currentObjectUrl = null;
+
+      function openModalWith(url){
+        if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = url;
+        modalImg.src = url;
+        modal.style.display = 'flex';
+      }
+
+      function closeModal(){
+        modal.style.display = 'none';
+        modalImg.src = '';
+        if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+      }
+
+      modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
+      modalClose.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
+
+      document.getElementById('previewBtn').addEventListener('click', async () => {
+        try {
+          const fd = new FormData(form);
+          const res = await fetch('/preview', { method: 'POST', body: fd });
+          if (!res.ok) throw new Error('Preview failed');
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          openModalWith(url);
+        } catch (e) {
+          alert('Preview error: ' + (e && e.message ? e.message : e));
+        }
+      });
+
+      async function startGeneration() {
+        try {
+          const fd = new FormData(form);
+          const res = await fetch('/start_generate', { method: 'POST', body: fd });
+          if (!res.ok) throw new Error('Failed to start generation');
+          const data = await res.json();
+          currentJobId = data.job_id;
+          currentTotal = data.total || 0;
+          currentCompleted = 0;
+          setGenerateButtonState('generating', 0, currentTotal);
+          previewBtn.disabled = true;
+
+          // Begin polling
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = setInterval(async () => {
+            try {
+              const pres = await fetch(`/progress/${currentJobId}`);
+              if (!pres.ok) throw new Error('Progress poll failed');
+              const p = await pres.json();
+              if (p.total) currentTotal = p.total;
+              currentCompleted = p.completed || 0;
+              setGenerateButtonState('generating', currentCompleted, currentTotal);
+              if (p.status === 'done') {
+                clearInterval(pollTimer);
+                pollTimer = null;
+                setGenerateButtonState('download');
+                previewBtn.disabled = false;
+              }
+              if (p.status === 'error') {
+                clearInterval(pollTimer);
+                pollTimer = null;
+                alert('Generation error: ' + (p.error || 'Unknown error'));
+                setGenerateButtonState('idle');
+                previewBtn.disabled = false;
+              }
+            } catch (e) {
+              // stop polling on error
+              clearInterval(pollTimer);
+              pollTimer = null;
+              alert('Progress error: ' + (e && e.message ? e.message : e));
+              setGenerateButtonState('idle');
+              previewBtn.disabled = false;
+            }
+          }, 700);
+        } catch (e) {
+          alert('Start error: ' + (e && e.message ? e.message : e));
+        }
+      }
+
+      generateBtn.addEventListener('click', async () => {
+        const mode = generateBtn.dataset.mode || 'idle';
+        if (mode === 'idle') {
+          await startGeneration();
+        } else if (mode === 'download') {
+          if (!currentJobId) return;
+          try {
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = 'Preparing download...';
+            const res = await fetch(`/download/${currentJobId}`);
+            if (!res.ok) throw new Error('Download failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'certificates.zip';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            // reset state
+            currentJobId = null;
+            setGenerateButtonState('idle');
+          } catch (e) {
+            alert('Download error: ' + (e && e.message ? e.message : e));
+            setGenerateButtonState('download');
+          }
+        }
+      });
+
+      updateMarkers();
+    });
+  </script>
+ </head>
+<body>
+  <div class="brandbar">
+    <div class="left"><img alt="GDG" src="/assets/GDG_Logo.svg"></div>
+    <div class="title">With Love by GDG On Campus KARE</div>
+    <div class="right"><a href="{{ GITHUB_URL }}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.64 0 8.13c0 3.6 2.29 6.64 5.47 7.72.4.08.55-.18.55-.39 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.52-.01-.53.63-.01 1.08.59 1.23.83.72 1.22 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.91-3.64-4.06 0-.9.31-1.64.82-2.22-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.85.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.07 2.2-.85 2.2-.85.44 1.1.16 1.92.08 2.12.51.58.82 1.32.82 2.22 0 3.16-1.87 3.86-3.65 4.06.29.26.54.76.54 1.53 0 1.1-.01 1.98-.01 2.25 0 .21.15.47.55.39C13.71 14.77 16 11.73 16 8.13 16 3.64 12.42 0 8 0z"></path></svg><span>Source on GitHub</span></a></div>
+  </div>
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <h2>Configure Positions</h2>
+        <div class="stage">
+          <img id="baseImage" src="/uploads/{{ image }}" alt="Base Image">
+          <div id="markers" class="stage" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;"></div>
+        </div>
+        <div class="small" style="margin-top:8px;">Click on the image to set the position for the selected column.</div>
+      </div>
+
+      <div class="card">
+        <h2>Settings & Generate</h2>
+        <form id="genForm" action="/generate" method="post">
+        <input type="hidden" name="image" value="{{ image }}">
+        <input type="hidden" name="data_file" value="{{ data_file }}">
+        <input type="hidden" id="columnsJson" value='{{ columns | tojson | safe }}'>
+        <input type="hidden" name="headers_present" value="{{ 'true' if headers_present else 'false' }}">
+
+        <h3>Active Column to Position</h3>
+        <select id="activeColumn">
+          <option value="">-- select --</option>
+          {% for col in columns %}
+          <option value="{{col}}">{{col}}</option>
+          {% endfor %}
+        </select>
+
+        <h3>Per-Column Settings</h3>
+        <div class="small">Preview uses {{ 'second data row (row 3 overall if available; else row 2)' if headers_present else 'first row' }}.</div>
+        <div class="notice">Your uploads and generated files do not persist. They are deleted after you download the ZIP or after 10 minutes of inactivity.</div>
+        {% for col in columns %}
+          <div style="padding:8px 0;border-bottom:1px solid #eee;">
+            <strong>{{ col }}</strong><br>
+            X (0-1): <input type="number" step="any" name="pos_{{col}}_x" value="0.5" style="width:100px;">
+            Y (0-1): <input type="number" step="any" name="pos_{{col}}_y" value="0.5" style="width:100px;">
+            Font Size: <input type="number" name="size_{{col}}" value="40" style="width:100px;">
+          </div>
+        {% endfor %}
+
+        <h3>File Naming Column</h3>
+        <div class="small">The selected column's content will be used as the generated file name.</div>
+        <select name="file_column">
+          <option value="">Default (generated_#)</option>
+          {% for col in columns %}
+          <option value="{{col}}">{{col}}</option>
+          {% endfor %}
+        </select>
+
+        <h3 style="margin-top:16px;">Font</h3>
+        <div class="small">Choose a font for all text. Select Other to upload a .ttf that will be saved for future use.</div>
+        <select id="fontChoice" name="font_choice">
+          {% if fonts %}
+            {% for f in fonts %}
+              <option value="{{ f }}">{{ f | replace('.ttf','') | replace('.TTF','') }}</option>
+            {% endfor %}
+          {% endif %}
+          <option value="other">Other (upload .ttf)</option>
+        </select>
+        <div id="fontUploadRow" style="display:none; margin-top:8px;">
+          <input type="file" name="font_file" accept=".ttf">
+        </div>
+
+          <div style="margin-top:16px; display:flex; gap:12px;">
+            <button type="button" id="previewBtn" class="btn secondary">Preview</button>
+            <button type="button" id="generateBtn" class="btn">Generate</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="about">
+      <h3>About {{ GDG_NAME }}</h3>
+      <p>{{ GDG_NAME }} fosters developer communities on campus, running tech talks, workshops, and open source initiatives.</p>
+    </div>
+    <div class="footer">
+      <div class="footer-line"></div>
+      <div>Made by Inukurthi Bharath Kumar</div>
+      <div class="footer-links"><a href="{{ LINKEDIN_URL }}" target="_blank" rel="noopener">LinkedIn</a> · <a href="{{ CONTRIBUTOR_GITHUB }}" target="_blank" rel="noopener">GitHub</a> · <a href="mailto:{{ CONTACT_EMAIL }}" target="_blank" rel="noopener">Mail</a></div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Preview Modal -->
+  <div id="previewModal">
+    <div id="previewClose">✕</div>
+    <img id="previewImgFS" alt="Preview">
+  </div>
+</body>
+</html>
+
